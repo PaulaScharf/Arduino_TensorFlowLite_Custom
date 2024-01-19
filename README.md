@@ -5,7 +5,6 @@ This repository has the code (including examples) needed to use Tensorflow Lite 
 ## Table of contents
 <!--ts-->
 * [Table of contents](#table-of-contents)
-* [Build Status](#build-status)
 * [How to Install](#how-to-install)
   * [GitHub](#github)
   * [Checking your Installation](#checking-your-installation)
@@ -14,19 +13,12 @@ This repository has the code (including examples) needed to use Tensorflow Lite 
 * [Contributing](#contributing)
 <!--te-->
 
-## Build Status
-
-Build Type          |     Status    |
----------------     | ------------- |
-Arduino CLI on Linux  | [![Arduino](https://github.com/tensorflow/tflite-micro-arduino-examples/actions/workflows/ci.yml/badge.svg?event=schedule)](https://github.com/tensorflow/tflite-micro-arduino-examples/actions/workflows/ci.yml)
-Sync from tflite-micro  | [![Sync from tflite-micro](https://github.com/tensorflow/tflite-micro-arduino-examples/actions/workflows/sync.yml/badge.svg)](https://github.com/tensorflow/tflite-micro-arduino-examples/actions/workflows/sync.yml)
-
 ## How to Install
 
 ### GitHub
 
 The officially supported TensorFlow Lite Micro library for Arduino resides
-in the [tflite-micro-arduino-examples](https://github.com/tensorflow/tflite-micro-arduino-examples)
+in the [tflite-micro-arduino-examples](https://github.com/PaulaScharf/Arduino_TensorFlowLite)
 GitHub repository.
 To install the in-development version of this library, you can use the
 latest version directly from the GitHub repository. This requires you clone the
@@ -39,7 +31,7 @@ Once you're in that folder in the terminal, you can then grab the code using the
 git command line tool:
 
 ```
-git clone https://github.com/tensorflow/tflite-micro-arduino-examples Arduino_TensorFlowLite
+git clone git@github.com:PaulaScharf/Arduino_TensorFlowLite.git Arduino_TensorFlowLite
 ```
 
 To update your clone of the repository to the latest code, use the following terminal commands:
@@ -59,10 +51,7 @@ of sample projects you can try out.
 
 ## Compatibility
 
-This library is designed for the `Arduino Nano 33 BLE Sense` board. The framework
-code for running machine learning models should be compatible with most Arm Cortex
-M-based boards, such as the `Raspberry Pi Pico`, but the code to access peripherals
-like microphones, cameras, and accelerometers is specific to the `Nano 33 BLE Sense`.
+This library was originally designed for the `Arduino Nano 33 BLE Sense` board. I changed that tho.
 
 ## License
 
