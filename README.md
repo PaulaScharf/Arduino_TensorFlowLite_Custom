@@ -47,8 +47,6 @@ You will now see an `Arduino_TensorFlowLite`
 entry in the `File -> Examples` menu of the Arduino IDE. This submenu contains a list
 of sample projects you can try out.
 
-![Hello World](docs/hello_world_screenshot.png)
-
 ## Compatibility
 
 This library was originally designed for the `Arduino Nano 33 BLE Sense` board. I changed that tho.
