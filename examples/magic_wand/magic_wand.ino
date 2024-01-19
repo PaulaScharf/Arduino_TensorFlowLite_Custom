@@ -23,11 +23,10 @@ limitations under the License.
 #include "magic_wand_model_data.h"
 #include "output_handler.h"
 #include "tensorflow/lite/micro/kernels/micro_ops.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
-#include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
+// #include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
+#include "tensorflow/lite/micro/all_ops_resolver.h"
 #include "tensorflow/lite/schema/schema_generated.h"
-#include "tensorflow/lite/version.h"
 
 // #include "Freenove_WS2812_Lib_for_ESP32.h"
 // #define LED_PIN 1
@@ -39,7 +38,6 @@ limitations under the License.
 
 // Globals, used for compatibility with Arduino-style sketches.
 namespace {
-tflite::ErrorReporter* error_reporter = nullptr;
 const tflite::Model* model = nullptr;
 tflite::MicroInterpreter* interpreter = nullptr;
 TfLiteTensor* model_input = nullptr;
@@ -58,17 +56,12 @@ float movement_threshold;
 void setup() {
   Serial.begin(115200);
   while(!Serial);
-  // Set up logging. Google style is to avoid globals or statics because of
-  // lifetime uncertainty, but since this has a trivial destructor it's okay.
-  static tflite::MicroErrorReporter micro_error_reporter;  // NOLINT
-  error_reporter = &micro_error_reporter;
 
   // Map the model into a usable data structure. This doesn't involve any
   // copying or parsing, it's a very lightweight operation.
   model = tflite::GetModel(g_magic_wand_model_data);
   if (model->version() != TFLITE_SCHEMA_VERSION) {
-    TF_LITE_REPORT_ERROR(error_reporter,
-                         "Model provided is schema version %d not equal "
+    Serial.printf("Model provided is schema version %d not equal "
                          "to supported version %d.",
                          model->version(), TFLITE_SCHEMA_VERSION);
     return;
@@ -79,34 +72,39 @@ void setup() {
   // An easier approach is to just use the AllOpsResolver, but this will
   // incur some penalty in code space for op implementations that are not
   // needed by this graph.
-  static tflite::MicroMutableOpResolver micro_mutable_op_resolver;  // NOLINT
-  micro_mutable_op_resolver.AddBuiltin(
-      tflite::BuiltinOperator_DEPTHWISE_CONV_2D,
-      tflite::ops::micro::Register_DEPTHWISE_CONV_2D());
-  micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_MAX_POOL_2D,
-                               tflite::ops::micro::Register_MAX_POOL_2D());
-  micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_CONV_2D,
-                               tflite::ops::micro::Register_CONV_2D());
-  micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_FULLY_CONNECTED,
-                               tflite::ops::micro::Register_FULLY_CONNECTED());
-  micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_SOFTMAX,
-                               tflite::ops::micro::Register_SOFTMAX());
-  micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_MUL,
-                               tflite::ops::micro::Register_MUL());
-  micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_ADD,
-                               tflite::ops::micro::Register_ADD());
-  micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_MEAN,
-                               tflite::ops::micro::Register_MEAN());
-  micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_AVERAGE_POOL_2D,
-                               tflite::ops::micro::Register_AVERAGE_POOL_2D());
-  micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_RESHAPE,
-                               tflite::ops::micro::Register_RESHAPE());
-  // micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_EXPAND_DIMS,
-  //                              tflite::ops::micro::Register_EXPAND_DIMS());
+  static tflite::AllOpsResolver resolver;
+  // static tflite::MicroMutableOpResolver<10> micro_mutable_op_resolver;  // NOLINT
+
+  // micro_mutable_op_resolver.AddDepthwiseConv2D();
+  // micro_mutable_op_resolver.AddFullyConnected();
+  // micro_mutable_op_resolver.AddConv2D();
+  // micro_mutable_op_resolver.AddMaxPool2D();
+  // micro_mutable_op_resolver.AddSoftmax();
+  // micro_mutable_op_resolver.AddMul();
+  // micro_mutable_op_resolver.AddAdd();
+  // micro_mutable_op_resolver.AddMean();
+  // micro_mutable_op_resolver.AddExpandDims();
+  // micro_mutable_op_resolver.AddBuiltin(
+  //     tflite::BuiltinOperator_DEPTHWISE_CONV_2D,
+  //     tflite::ops::micro::Register_DEPTHWISE_CONV_2D());
+  // micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_MAX_POOL_2D,
+  //                              tflite::ops::micro::Register_MAX_POOL_2D());
+  // micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_CONV_2D,
+  //                              tflite::ops::micro::Register_CONV_2D());
+  // micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_FULLY_CONNECTED,
+  //                              tflite::ops::micro::Register_FULLY_CONNECTED());
+  // micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_SOFTMAX,
+  //                              tflite::ops::micro::Register_SOFTMAX());
+  // micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_MUL,
+  //                              tflite::ops::micro::Register_MUL());
+  // micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_ADD,
+  //                              tflite::ops::micro::Register_ADD());
+  // micro_mutable_op_resolver.AddBuiltin(tflite::BuiltinOperator_MEAN,
+  //                              tflite::ops::micro::Register_MEAN());
 
   // Build an interpreter to run the model with.
   static tflite::MicroInterpreter static_interpreter(
-      model, micro_mutable_op_resolver, tensor_arena, kTensorArenaSize, error_reporter);
+      model, resolver, tensor_arena, kTensorArenaSize);
   interpreter = &static_interpreter;
 
   // Allocate memory from the tensor_arena for the model's tensors.
@@ -132,10 +130,10 @@ void setup() {
 
   input_length = model_input->bytes / sizeof(float);
 
-  TfLiteStatus setup_status = SetupAccelerometer(error_reporter);
+  TfLiteStatus setup_status = SetupAccelerometer();
   movement_threshold = CalibrateAccelerometer();
   if (setup_status != kTfLiteOk) {
-    TF_LITE_REPORT_ERROR(error_reporter, "Set up failed\n");
+    Serial.println("Set up failed\n");
   }
 }
 
@@ -227,7 +225,7 @@ void RecognizeGestures() {
         // Run inference, and report any error.
         TfLiteStatus invoke_status = interpreter->Invoke();
         if (invoke_status != kTfLiteOk) {
-          TF_LITE_REPORT_ERROR(error_reporter, "Invoke failed on index: %d\n",
+          Serial.printf("Invoke failed on index: %d\n",
                                begin_index);
           return;
         }
@@ -237,7 +235,7 @@ void RecognizeGestures() {
 
         // Serial.println(found_gesture);
         // Produce an output
-        // HandleOutput(error_reporter, found_gesture);
+        HandleOutput(found_gesture);
 
         delay(100);
 
@@ -248,7 +246,7 @@ void RecognizeGestures() {
     } break;
 
     default: {
-      TF_LITE_REPORT_ERROR(error_reporter, "Logic error - unknown state");
+      Serial.println("Logic error - unknown state");
     } break;
   }
 
@@ -284,7 +282,7 @@ void CaptureGestureData() {
       } else if (strcmp(next_gesture, "nostep") == 0) {
         next_gesture = "nostep";
       }
-      TF_LITE_REPORT_ERROR(error_reporter, "# Hold the wand still");
+      Serial.println("# Hold the wand still");
       state = ePendingStillness;
     } break;
 
@@ -302,8 +300,7 @@ void CaptureGestureData() {
         const int duration = counter - still_found_time;
         if (duration > 25) {
           state = ePendingMovement;
-          TF_LITE_REPORT_ERROR(error_reporter,
-                               "# When you're ready, perform the %s gesture",
+          Serial.printf("# When you're ready, perform the %s gesture",
                                next_gesture);
         }
       }
@@ -313,7 +310,7 @@ void CaptureGestureData() {
       if (is_moving) {
         state = eRecordingGesture;
         gesture_start_time = counter;
-        TF_LITE_REPORT_ERROR(error_reporter, "# Perform the %s gesture now",
+        Serial.printf("# Perform the %s gesture now",
                              next_gesture);
       }
     } break;
@@ -322,25 +319,25 @@ void CaptureGestureData() {
       const int recording_time = 100;
       if ((counter - gesture_start_time) > recording_time) {
         ++gesture_count;
-        TF_LITE_REPORT_ERROR(error_reporter, "****************");
-        TF_LITE_REPORT_ERROR(error_reporter, "gesture: %s", next_gesture);
+        Serial.println("****************");
+        Serial.printf("gesture: %s", next_gesture);
         const float* input_data = model_input->data.f;
         for (int offset = recording_time - 10; offset > 0; --offset) {
           const int array_offset = (input_length - (offset * 3));
           const int x = static_cast<int>(input_data[array_offset + 0]);
           const int y = static_cast<int>(input_data[array_offset + 1]);
           const int z = static_cast<int>(input_data[array_offset + 2]);
-          TF_LITE_REPORT_ERROR(error_reporter, "x: %d y:%d z:%d", x, y, z);
+          Serial.printf("x: %d y:%d z:%d", x, y, z);
         }
-        TF_LITE_REPORT_ERROR(error_reporter, "~~~~~~~~~~~~~~~~");
-        TF_LITE_REPORT_ERROR(error_reporter, "# %d gestures recorded",
+        Serial.println("~~~~~~~~~~~~~~~~");
+        Serial.printf("# %d gestures recorded",
                              gesture_count);
         state = eStarting;
       }
     } break;
 
     default: {
-      TF_LITE_REPORT_ERROR(error_reporter, "Logic error - unknown state");
+      Serial.println("Logic error - unknown state");
     } break;
   }
 
@@ -354,7 +351,7 @@ void loop() {
  
   // Attempt to read new data from the accelerometer.
   bool got_data =
-      ReadAccelerometer(error_reporter, model_input->data.f, input_length);
+      ReadAccelerometer(model_input->data.f, input_length);
   // If there was no new data, wait until next time.
   if (!got_data) return;
 

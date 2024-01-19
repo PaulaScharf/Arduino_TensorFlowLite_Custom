@@ -34,12 +34,11 @@ int sample_skip_counter = 1;
 
 sensors_event_t a, g, temp;
 
-TfLiteStatus SetupAccelerometer(tflite::ErrorReporter* error_reporter) {
+TfLiteStatus SetupAccelerometer() {
   // mpu6050 
   Wire1.begin();
 
   if (!mpu.begin(0x68, &Wire1)) {
-    TF_LITE_REPORT_ERROR(error_reporter, "MPU6050 Chip wurde nicht gefunden");
     Serial.println("MPU6050 Chip wurde nicht gefunden");
     return kTfLiteError;
   }
@@ -58,7 +57,7 @@ TfLiteStatus SetupAccelerometer(tflite::ErrorReporter* error_reporter) {
   // float sample_rate = IMU.accelerationSampleRate();
   // sample_every_n = static_cast<int>(roundf(sample_rate / kTargetHz));
 
-  TF_LITE_REPORT_ERROR(error_reporter, "Magic starts!");
+  Serial.println("Magic starts!");
 
 
   return kTfLiteOk;
@@ -80,7 +79,7 @@ float CalibrateAccelerometer() {
   return average;
 }
 
-bool ReadAccelerometer(tflite::ErrorReporter* error_reporter, float* input,
+bool ReadAccelerometer(float* input,
                        int length) {
   mpu.getEvent(&a, &g, &temp);
   const float norm_x = a.acceleration.x;
@@ -94,7 +93,7 @@ bool ReadAccelerometer(tflite::ErrorReporter* error_reporter, float* input,
   // Serial.print(",y:");
   // Serial.print(norm_y);
   // Serial.print(",z:");
-  Serial.println(norm_z);
+  // Serial.println(norm_z);
   // If we reached the end of the circle buffer, reset
   if (begin_index >= 600) {
     begin_index = 0;

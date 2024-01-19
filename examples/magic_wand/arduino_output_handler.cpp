@@ -25,7 +25,7 @@ limitations under the License.
 //   led.show();
 // }
 
-void HandleOutput(tflite::ErrorReporter* error_reporter, int kind) {
+void HandleOutput(int kind) {
   // The first time this method runs, set up our LED
   static bool is_initialized = false;
   if (!is_initialized) {
@@ -37,17 +37,11 @@ void HandleOutput(tflite::ErrorReporter* error_reporter, int kind) {
 
   // Print some ASCII art for each gesture and control the LED.
   if (kind == 0) {
-    TF_LITE_REPORT_ERROR(
-        error_reporter,
-        "not a step");
+    Serial.println("not a step");
   } else if (kind == 1) {
     // setLED(0,60,0);
-    TF_LITE_REPORT_ERROR(
-        error_reporter,
-        "paula stepped");
+    Serial.println("paula stepped");
   } else {
-    TF_LITE_REPORT_ERROR(
-        error_reporter,
-        "tom stepped");
+    Serial.println("tom stepped");
   }
 }
