@@ -31,7 +31,7 @@ Once you're in that folder in the terminal, you can then grab the code using the
 git command line tool:
 
 ```
-git clone git@github.com:PaulaScharf/Arduino_TensorFlowLite.git Arduino_TensorFlowLite
+git clone https://github.com/PaulaScharf/Arduino_TensorFlowLite_Custom.git Arduino_TensorFlowLite
 ```
 
 To update your clone of the repository to the latest code, use the following terminal commands:
